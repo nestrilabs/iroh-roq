@@ -1,5 +1,5 @@
 use anyhow::{ensure, Result};
-use iroh_quinn_proto::{coding::Codec, VarInt};
+use iroh_quinn_proto::{coding::Encodable, VarInt};
 use rtp::packet::Packet as RtpPacket;
 use tokio_util::{bytes::BytesMut, sync::CancellationToken};
 use tracing::debug;

@@ -11,4 +11,4 @@ pub use self::{
 pub const ALPN: &[u8] = b"/iroh/roq/1";
 
 pub use iroh_quinn_proto::VarInt;
-pub use rtp::{self, packet::Packet as RtpPacket};
+pub use rtp::{self, header::Header as RtpHeader, packet::Packet as RtpPacket};

@@ -1,8 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::{bail, Result};
-use iroh::endpoint::{Connection, VarInt};
-use iroh_quinn_proto::coding::Codec;
+use iroh::endpoint::Connection;
+use iroh_quinn_proto::{coding::Decodable, VarInt};
 use n0_future::task::{self, AbortOnDropHandle, JoinSet};
 use tokio::{
     io::{AsyncRead, AsyncReadExt},
@@ -279,7 +279,7 @@ async fn read_varint<R: AsyncRead + Unpin>(conn: &mut R) -> Result<VarInt> {
 
 #[cfg(test)]
 mod tests {
-    use iroh::Endpoint;
+    use iroh::{endpoint::presets, Endpoint};
     use rtp::packet::Packet as RtpPacket;
 
     use super::*;
@@ -287,25 +287,26 @@ mod tests {
 
     #[tokio::test]
     async fn test_datagram_flow() -> Result<()> {
-        let ep1 = Endpoint::builder()
-            .bind_addr_v4("127.0.0.1:0".parse().unwrap())
+        let ep1 = Endpoint::builder(presets::N0)
+            .bind_addr("127.0.0.1:0")?
             .alpns(vec![ALPN.to_vec()])
             .bind()
             .await?;
-        let ep2 = Endpoint::builder()
-            .bind_addr_v4("127.0.0.1:0".parse().unwrap())
+
+        let ep2 = Endpoint::builder(presets::N0)
+            .bind_addr("127.0.0.1:0")?
             .alpns(vec![ALPN.to_vec()])
             .bind()
             .await?;
 
         let flow_id = VarInt::from_u32(0);
 
-        let ep2_addr = ep2.node_addr().await?;
+        let ep2_addr = ep2.addr();
 
         let _handle = task::spawn(async move {
             while let Some(incoming) = ep2.accept().await {
                 if let Ok(connection) = incoming.await {
-                    assert_eq!(connection.alpn().unwrap(), ALPN, "invalid ALPN");
+                    assert_eq!(connection.alpn(), ALPN, "invalid ALPN");
 
                     let session = Session::new(connection);
                     let send_flow = session.new_send_flow(flow_id).await.unwrap();
@@ -341,25 +342,25 @@ mod tests {
 
     #[tokio::test]
     async fn test_session_flow() -> Result<()> {
-        let ep1 = Endpoint::builder()
-            .bind_addr_v4("127.0.0.1:0".parse().unwrap())
+        let ep1 = Endpoint::builder(presets::N0)
+            .bind_addr("127.0.0.1:0")?
             .alpns(vec![ALPN.to_vec()])
             .bind()
             .await?;
-        let ep2 = Endpoint::builder()
-            .bind_addr_v4("127.0.0.1:0".parse().unwrap())
+        let ep2 = Endpoint::builder(presets::N0)
+            .bind_addr("127.0.0.1:0")?
             .alpns(vec![ALPN.to_vec()])
             .bind()
             .await?;
 
         let flow_id = VarInt::from_u32(0);
 
-        let ep2_addr = ep2.node_addr().await?;
+        let ep2_addr = ep2.addr();
 
         let _handle = task::spawn(async move {
             while let Some(incoming) = ep2.accept().await {
                 if let Ok(connection) = incoming.await {
-                    assert_eq!(connection.alpn().unwrap(), ALPN, "invalid ALPN");
+                    assert_eq!(connection.alpn(), ALPN, "invalid ALPN");
 
                     let session = Session::new(connection);
                     let send_flow = session.new_send_flow(flow_id).await.unwrap();
